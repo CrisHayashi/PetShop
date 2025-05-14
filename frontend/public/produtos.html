@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cadastro de Produtos - Petshop</title>
+
+  <link rel="stylesheet" href="/css/materialize.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+
+  <div class="container">
+    <h3 class="center-align">Cadastro de Produtos</h3>
+
+    <div class="row">
+      <form id="formProduto" class="col s12">
+        <div class="row">
+          <div class="input-field col s6">
+            <input id="nome" name="nome" type="text" required>
+            <label for="nome">Nome do Produto</label>
+          </div>
+          <div class="input-field col s6">
+            <input id="categoria" name="categoria" type="text" required>
+            <label for="categoria">Categoria</label>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="input-field col s6">
+            <input id="marca" name="marca" type="text" required>
+            <label for="marca">Marca</label>
+          </div>
+          <div class="input-field col s3">
+            <input id="preco" name="preco" type="number" step="0.01" min="0" required>
+            <label for="preco">Preço de Venda</label>
+          </div>
+          <div class="input-field col s3">
+            <input id="estoque" name="estoque" type="number" min="0" required>
+            <label for="estoque">Estoque Disponível</label>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="input-field col s12">
+            <input id="codigo_barras" name="codigo_barras" type="text" required>
+            <label for="codigo_barras">Código de Barras</label>
+          </div>
+        </div>
+
+        <div class="row center-align">
+          <button class="btn waves-effect waves-light" type="submit">Cadastrar Produto</button>
+        </div>
+      </form>
+    </div>
+
+    <h4 class="center-align">Lista de Produtos</h4>
+    <table class="striped centered" id="tabelaProdutos">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nome</th>
+          <th>Categoria</th>
+          <th>Marca</th>
+          <th>Preço</th>
+          <th>Estoque</th>
+          <th>Código de Barras</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td>Ração Golden Fórmula</td>
+          <td>Ração</td>
+          <td>Golden</td>
+          <td>R$ 129,90</td>
+          <td>15</td>
+          <td>7891234567890</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script src="/js/materialize.min.js"></script>
+  <script src="/js/init.js"></script>
+
+  <script>
+    async function carregarProdutos() {
+      const response = await fetch('http://localhost:3000/api/produtos');
+      const produtos = await response.json();
+      const tbody = document.querySelector('#tabelaProdutos tbody');
+      tbody.innerHTML = '';
+
+      produtos.forEach(produto => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${produto.id}</td>
+          <td>${produto.nome}</td>
+          <td>${produto.categoria}</td>
+          <td>${produto.marca}</td>
+          <td>R$ ${produto.preco.toFixed(2)}</td>
+          <td>${produto.estoque}</td>
+          <td>${produto.codigo_barras}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    document.getElementById('formProduto').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const data = {
+        nome: form.nome.value,
+        categoria: form.categoria.value,
+        marca: form.marca.value,
+        preco: parseFloat(form.preco.value),
+        estoque: parseInt(form.estoque.value),
+        codigo_barras: form.codigo_barras.value
+      };
+
+      if (data.estoque < 0) {
+        M.toast({ html: 'Estoque não pode ser negativo!', classes: 'red' });
+        return;
+      }
+
+      try {
+        const response = await fetch('http://localhost:3000/api/produtos', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+          M.toast({ html: 'Produto cadastrado com sucesso!', classes: 'green' });
+          form.reset();
+          carregarProdutos();
+        } else {
+          const error = await response.json();
+          M.toast({ html: 'Erro: ' + (error.error || 'Não foi possível cadastrar.'), classes: 'red' });
+        }
+      } catch (err) {
+        M.toast({ html: 'Erro ao conectar com o servidor.', classes: 'red' });
+      }
+    });
+
+    carregarProdutos();
+  </script>
+
+</body>
+</html>
